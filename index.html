@@ -1,4 +1,12 @@
-<script type="importmap">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guardianes del Agua</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script type="importmap">
 {
   "imports": {
     "rxjs": "https://aistudiocdn.com/rxjs@^7.8.2?conditions=es2015",
@@ -12,8 +20,22 @@
     "@angular/common/http": "https://next.esm.sh/@angular/common@^20.1.6-0/http?external=rxjs",
     "@angular/core": "https://next.esm.sh/@angular/core@^20.1.6-0?external=rxjs",
     "@google/genai": "https://next.esm.sh/@google/genai@^1.20.0?external=rxjs",
-    "@angular/common": "https://next.esm.sh/@angular/common@^20.1.6-0?external=rxjs"
+    "@angular/common": "https://next.esm.sh/@angular/common@^20.1.6-0?external=rxjs",
+    "d3": "https://next.esm.sh/d3@^7.9.0?external=rxjs"
   }
 }
 </script>
-full contents of index.html
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-200 via-cyan-200 to-blue-300">
+  <app-root></app-root>
+</body>
+</html>
