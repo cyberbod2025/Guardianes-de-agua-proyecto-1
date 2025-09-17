@@ -1,202 +1,415 @@
-<div class="min-h-screen p-4 sm:p-8 flex flex-col items-center justify-center font-sans text-gray-800">
+<main class="min-h-screen p-4 sm:p-8 font-sans">
+  <div class="max-w-4xl mx-auto">
+    
+    @if(showSummary()) {
+      <div class="bg-white rounded-2xl shadow-lg p-8 text-center fade-in">
+        <header class="bg-slate-600 text-white p-4 rounded-t-lg -m-8 mb-8">
+           <h1 class="text-2xl font-bold">RESUMEN DE MISIÓN</h1>
+        </header>
+        <p class="text-slate-600 mb-6">Este es el progreso de tu equipo hasta ahora. ¡Tomen nota de lo que falta para la próxima vez!</p>
 
-  <header class="text-center mb-6">
-    <h1 class="text-5xl md:text-6xl font-black uppercase bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent">
-      Guardianes del Agua
-    </h1>
-  </header>
-
-  <!-- Progress Map -->
-  @if (currentModule() > 0) {
-    <nav class="w-full max-w-4xl mb-8">
-      <ul class="flex justify-between items-center">
-        @for (module of ['Problema', 'Plan', 'Hipótesis', 'Experimento', 'Análisis', 'Reporte']; track module; let i = $index) {
-          <li class="flex-1 text-center">
-            <button (click)="goToModule(i + 1)" [disabled]="i + 1 > currentModule()" class="flex flex-col sm:flex-row items-center justify-center w-full group">
-              <span class="flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300"
-                    [class.bg-blue-600]="currentModule() > i + 1"
-                    [class.border-blue-600]="currentModule() > i"
-                    [class.text-white]="currentModule() > i + 1"
-                    [class.bg-blue-500]="currentModule() === i + 1"
-                    [class.text-white]="currentModule() === i + 1"
-                    [class.border-gray-400]="currentModule() <= i"
-                    [class.text-gray-500]="currentModule() <= i"
-                    [class.group-hover:border-blue-500]="i + 1 <= currentModule()"
-                    [class.group-hover:text-blue-500]="i + 1 === currentModule()"
-                    >
-                {{ i + 1 }}
-              </span>
-              <span class="text-xs sm:text-sm mt-1 sm:mt-0 sm:ml-2 font-semibold transition-colors duration-300"
-                    [class.text-blue-700]="currentModule() >= i + 1"
-                    [class.text-gray-500]="currentModule() < i + 1"
-                    [class.group-hover:text-blue-600]="i + 1 <= currentModule()"
-                    >{{ module }}</span>
-            </button>
-          </li>
-          @if (!$last) {
-            <li class="flex-1 h-px bg-gray-300 hidden sm:block mx-2"></li>
-          }
-        }
-      </ul>
-    </nav>
-  }
-
-  <main class="w-full max-w-4xl bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 sm:p-10 relative">
-    @switch (currentModule()) {
-      @case (0) {
-        <!-- Intro Screen -->
-        <div class="text-center fade-in">
-          <h2 class="text-3xl font-bold text-blue-800 mb-4">¡Bienvenido a la Misión!</h2>
-          <p class="text-lg text-gray-700 mb-8">Tu comunidad te necesita. Prepárate para investigar, experimentar y proponer soluciones a los problemas del agua. ¿Estás listo para convertirte en un Guardián del Agua?</p>
-          <button (click)="goToModule(1)" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform duration-200 hover:scale-105 text-xl">
-            ¡Comenzar Misión!
-          </button>
-        </div>
-      }
-      @case (1) {
-        <!-- Module 1: Define Problem -->
-        <div class="fade-in">
-          <h2 class="text-2xl font-bold text-blue-800 mb-1">Módulo 1: El Problema</h2>
-          <p class="text-gray-600 mb-6">El primer paso es hacer una pregunta que podamos MEDIR. ¡Piensa en números, cantidades o tiempo!</p>
-          <div class="space-y-4">
-            <label for="question-input" class="block text-lg font-medium text-gray-700">Formula tu pregunta de investigación:</label>
-            <textarea id="question-input" [value]="question()" (input)="onQuestionInput($event)" rows="4" class="w-full p-3 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder:text-gray-400" placeholder="Ej: ¿Cuántos litros de agua de lluvia puede recolectar un techo de 50m² en una hora?"></textarea>
-            <button (click)="validateQuestion()" [disabled]="isLoading() || !question().trim()" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-300 flex items-center justify-center text-lg">
-              @if (isLoading()) {
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span>Validando con el Guardián...</span>
-              } @else {
-                <span>¡Validar Pregunta!</span>
-              }
-            </button>
-          </div>
-          @if (validationResponse(); as response) {
-            <div class="mt-6 p-4 rounded-lg border text-center" [class.bg-green-100]="response.is_measurable" [class.text-green-800]="response.is_measurable" [class.border-green-400]="response.is_measurable" [class.bg-yellow-100]="!response.is_measurable" [class.text-yellow-800]="!response.is_measurable" [class.border-yellow-400]="!response.is_measurable">
-              <p class="font-semibold">{{ response.feedback }}</p>
-              @if(response.is_measurable) { <p class="text-sm">¡Excelente! Preparando el siguiente módulo...</p> }
-            </div>
-          }
-        </div>
-      }
-      @case (2) {
-        <!-- Module 2: Plan de Ataque -->
-        <div class="fade-in">
-          <h2 class="text-2xl font-bold text-blue-800 mb-1">Módulo 2: Plan de Ataque</h2>
-          <p class="text-gray-600 mb-6">¿Qué pasos seguirán para responder su pregunta? Anoten todas las tareas, ¡ninguna es demasiado pequeña!</p>
-          <div class="flex gap-2 mb-4">
-            <input type="text" [(ngModel)]="newTask" (keyup.enter)="addTask()" placeholder="Ej: Investigar tipos de filtros de agua" class="flex-grow p-3 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder:text-gray-400">
-            <button (click)="addTask()" class="bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors" [disabled]="!newTask().trim()">Añadir</button>
-          </div>
-          <ul class="space-y-2">
-            @for (task of actionPlanTasks(); track task.id) {
-              <li class="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
-                <span class="text-gray-800">{{ task.text }}</span>
-                <button (click)="removeTask(task.id)" class="text-red-500 hover:text-red-700 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                </button>
-              </li>
-            } @empty {
-              <li class="text-center text-gray-500 p-4">Aún no hay tareas en el plan.</li>
-            }
-          </ul>
-           <div class="flex justify-end mt-6">
-            <button (click)="goToModule(3)" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Siguiente</button>
-          </div>
-        </div>
-      }
-      @case (3) {
-        <!-- Module 3: Hypothesis -->
-        <div class="fade-in">
-          <h2 class="text-2xl font-bold text-blue-800 mb-1">Módulo 3: La Hipótesis</h2>
-          <p class="text-gray-600 mb-6">Una hipótesis es su mejor suposición. ¿Qué creen que descubrirán? ¡Escriban su predicción!</p>
-          <textarea [value]="hypothesis()" (input)="onHypothesisInput($event)" rows="6" class="w-full p-3 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder:text-gray-400" placeholder="Ej: Creemos que podremos recolectar 20 litros de agua purificada con nuestro sistema..."></textarea>
-          <div class="flex justify-between mt-6">
-            <button (click)="goToModule(2)" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 transition-colors">Atrás</button>
-            <button (click)="goToModule(4)" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Siguiente</button>
-          </div>
-        </div>
-      }
-      @case (4) {
-        <!-- Module 4: Experiment -->
-        <div class="fade-in">
-          <h2 class="text-2xl font-bold text-blue-800 mb-1">Módulo 4: ¡A Experimentar!</h2>
-          <p class="text-gray-600 mb-6">¡Manos a la obra! Sigan su plan, realicen sus mediciones y anoten los resultados aquí. La gráfica se actualizará sola.</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 class="font-bold text-lg mb-2">Registrar Datos</h3>
-              <div class="flex gap-2 mb-4">
-                <input type="text" [(ngModel)]="newExperimentLabel" placeholder="Etiqueta (Ej: Prueba 1)" class="w-2/3 p-2 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400">
-                <input type="number" [(ngModel)]="newExperimentValue" placeholder="Valor" class="w-1/3 p-2 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400">
-                <button (click)="addExperimentDataPoint()" class="bg-blue-600 text-white font-bold p-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400" [disabled]="!newExperimentLabel().trim() || newExperimentValue() === null">Añadir</button>
-              </div>
-              <ul class="space-y-2 max-h-48 overflow-y-auto">
-                @for (data of experimentData(); track data.id) {
-                <li class="flex items-center justify-between bg-gray-100 p-2 rounded-lg">
-                  <span class="text-gray-800 font-medium">{{ data.label }}:</span>
-                  <span class="text-gray-800">{{ data.value }}</span>
-                   <button (click)="removeExperimentDataPoint(data.id)" class="text-red-500 hover:text-red-700 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                    </button>
-                </li>
-                } @empty {
-                  <li class="text-center text-gray-500 p-4">Sin datos registrados.</li>
+        <div class="grid md:grid-cols-2 gap-8 text-left">
+          <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h3 class="font-bold text-lg text-green-800 mb-3">Logros Completados</h3>
+            @if(missionSummary().completed.length > 0) {
+              <ul class="space-y-2">
+                @for(item of missionSummary().completed; track item) {
+                  <li class="text-green-900">{{ item }}</li>
                 }
               </ul>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg mb-2">Visualización de Resultados</h3>
-              <div #chartContainer class="w-full h-[300px] bg-gray-50 rounded-lg p-2">
-                @if(experimentData().length === 0) {
-                  <div class="flex items-center justify-center h-full text-gray-500">La gráfica aparecerá aquí.</div>
+            } @else {
+              <p class="text-slate-500">¡Es hora de empezar a completar tareas!</p>
+            }
+          </div>
+          <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+            <h3 class="font-bold text-lg text-amber-800 mb-3">Tareas Pendientes</h3>
+            @if(missionSummary().pending.length > 0) {
+              <ul class="space-y-2">
+                @for(item of missionSummary().pending; track item) {
+                  <li class="text-amber-900">{{ item }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="text-slate-500">¡Felicidades! Han completado todas las secciones.</p>
+            }
+          </div>
+        </div>
+
+        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <button (click)="cancelSaveAndExit()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105">
+            Volver a la Misión
+          </button>
+          <button (click)="confirmSaveAndExit()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg">
+            Confirmar Salida
+          </button>
+        </div>
+      </div>
+    } @else {
+      @if(stateService.currentModule() > 0 && stateService.currentModule() < 6) {
+        <nav class="mb-8" aria-label="Barra de Misión">
+          <h2 class="sr-only">Progreso de la Misión</h2>
+          <ol class="flex items-center justify-between border border-slate-200 rounded-lg p-2 shadow-sm bg-white">
+            @for(step of ['Problema', 'Plan', 'Hipótesis', 'Experimento', 'Análisis']; track step; let i = $index) {
+              <li class="flex-1">
+                <div 
+                  class="flex flex-col items-center text-center p-2 rounded-md transition-colors"
+                  [class]="stateService.currentModule() > i + 1 ? 'text-cyan-600 font-semibold' : (stateService.currentModule() === i + 1 ? 'bg-cyan-100 text-cyan-800 font-bold' : 'text-slate-500')">
+                  <span 
+                    class="w-8 h-8 rounded-full flex items-center justify-center border-2 mb-1"
+                    [class]="stateService.currentModule() > i ? 'bg-cyan-600 border-cyan-600 text-white' : 'bg-white border-slate-300'">
+                    {{ stateService.currentModule() > i + 1 ? '&#10003;' : i + 1 }}
+                  </span>
+                  <span class="text-xs sm:text-sm">{{ step }}</span>
+                </div>
+              </li>
+              @if(! $last) {
+                <hr class="flex-auto border-t-2" [class]="stateService.currentModule() > i + 1 ? 'border-cyan-600' : 'border-slate-200'" />
+              }
+            }
+          </ol>
+        </nav>
+      }
+
+      @switch (stateService.currentModule()) {
+        @case (0) {
+          <div class="bg-white rounded-2xl shadow-lg p-8 text-center fade-in">
+            <header class="bg-cyan-600 text-white p-4 rounded-t-lg -m-8 mb-8">
+               <h1 class="text-2xl font-bold">GUARDIANES DEL AGUA</h1>
+            </header>
+            <p class="text-slate-600 mb-4">Usa el poder de los números para entender y proponer soluciones al problema del agua en nuestra comunidad.</p>
+            
+            <div class="max-w-md mx-auto text-left">
+              <div class="space-y-4">
+                <div>
+                  <label for="group-select" class="font-semibold text-slate-700">1. Selecciona tu Grupo:</label>
+                  <select id="group-select" class="w-full mt-2 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-white" (change)="onGroupSelect($event)" [value]="selectedGroup()">
+                    <option value="" disabled selected>-- Elige tu grupo --</option>
+                    @for(group of allGroups(); track group) {
+                      <option [value]="group">{{ group }}</option>
+                    }
+                  </select>
+                </div>
+
+                @if (selectedGroup()) {
+                <div class="fade-in">
+                  <label for="student-select" class="font-semibold text-slate-700">2. Selecciona tu nombre:</label>
+                  <select id="student-select" class="w-full mt-2 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-white" (change)="onStudentSelect($event)" [value]="selectedStudentName()">
+                    <option value="" disabled selected>-- Elige tu nombre de la lista --</option>
+                    @for(student of studentsInGroup(); track student.name) {
+                      <option [value]="student.name">{{ student.name }}</option>
+                    }
+                  </select>
+                </div>
                 }
               </div>
             </div>
+            
+            @if(teamMembers().length > 0) {
+              <div class="max-w-md mx-auto mt-6 text-left p-4 bg-slate-50 rounded-lg border border-slate-200 fade-in">
+                <h3 class="font-bold text-lg text-cyan-800">¡Equipo Encontrado!</h3>
+                <p class="text-slate-600">Eres del <strong class="font-semibold">{{ stateService.teamName() }}</strong>.</p>
+                <p class="mt-2 font-semibold text-slate-700">Integrantes:</p>
+                <ul class="list-disc list-inside text-slate-600 mt-1">
+                  @for(member of teamMembers(); track member.name) {
+                    <li>{{ member.name }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            
+            <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+              <button (click)="stateService.goToModule(1)" [disabled]="!selectedStudentName()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 disabled:bg-slate-400 disabled:cursor-not-allowed">
+                ¡Comenzar Misión!
+              </button>
+              <input type="file" #fileInput hidden accept=".json" (change)="importProgress($event)" />
+              <button (click)="triggerImport()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-lg">
+                Importar Progreso
+              </button>
+            </div>
           </div>
-          <div class="flex justify-between mt-6">
-            <button (click)="goToModule(3)" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 transition-colors">Atrás</button>
-            <button (click)="goToModule(5)" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Siguiente</button>
+        }
+        @case (1) {
+          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
+              <h2 class="text-xl font-bold text-cyan-800">Sección 2: Indagación Inicial (Lluvia de Ideas)</h2>
+            </header>
+            <p class="text-slate-600 mb-4">Anoten todos los problemas o hechos relacionados con el agua que conocen. Añadan uno por uno.</p>
+            <div class="space-y-2 mb-4">
+              @for(obs of stateService.observations(); track obs; let i = $index) {
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    class="w-full p-2 border border-slate-300 rounded-lg text-slate-900" 
+                    [value]="obs"
+                    (blur)="handleUpdateObservation(i, $event)"
+                  />
+                  <button (click)="stateService.removeObservation(i)" class="text-red-500 hover:text-red-700 font-bold p-1 text-2xl">&times;</button>
+                </div>
+              }
+            </div>
+            <div class="flex items-center gap-2">
+              <input 
+                type="text"
+                class="w-full p-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder:text-slate-500" 
+                placeholder="Ej: 'Mucha basura en las coladeras'..."
+                [value]="newObservationInput()"
+                (input)="newObservationInput.set($any($event.target).value)"
+                (keydown.enter)="handleAddObservation()"
+              />
+              <button (click)="handleAddObservation()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg whitespace-nowrap">Añadir</button>
+            </div>
+
+
+            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 mt-8 rounded-t-lg">
+              <h2 class="text-xl font-bold text-cyan-800">Sección 3: El Puente a las Matemáticas</h2>
+            </header>
+            <p class="text-slate-600 mb-4">Ahora, transformen una de sus observaciones en una pregunta que se pueda MEDIR o CONTAR.</p>
+            <textarea 
+              class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-slate-900 placeholder:text-slate-500" 
+              rows="3" 
+              placeholder="Escribe tu pregunta medible aquí..."
+              [value]="problemStatementInput()"
+              (input)="problemStatementInput.set($any($event.target).value)"
+            ></textarea>
+            <div class="mt-4 flex flex-col sm:flex-row items-center gap-4">
+                <button (click)="validateQuestion()" [disabled]="!problemStatementInput() || isValidating()" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 flex items-center justify-center">
+                    @if(isValidating()) {
+                      <span class="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full"></span>
+                      <span>Validando...</span>
+                    } @else {
+                      <span>Validar Pregunta con IA</span>
+                    }
+                </button>
+                 <button (click)="getInspirationForProblem()" [disabled]="isGettingInspiration()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 flex items-center justify-center">
+                    @if(isGettingInspiration()) {
+                      <span class="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full"></span>
+                      <span>Buscando...</span>
+                    } @else {
+                      <span>💡 Inspiración</span>
+                    }
+                </button>
+              </div>
+              @if(validationResponse(); as vr) {
+                <div class="mt-4 p-4 rounded-lg border" [class]="vr.is_measurable ? 'bg-green-100 border-green-300 text-green-900' : 'bg-red-100 border-red-300 text-red-900'">
+                  <p class="font-bold">Respuesta del Guardián IA:</p>
+                  <p class="font-semibold">{{ vr.feedback }}</p>
+                </div>
+              }
+              @if(inspirationResponse(); as ir) {
+                <div class="mt-4 p-4 rounded-lg bg-sky-50 border border-sky-200 text-sky-800">
+                   <p class="font-bold mb-2">Aquí tienes unas ideas para inspirarte:</p>
+                   <ul class="list-disc list-inside space-y-1">
+                      @for(idea of ir.ideas; track idea) {
+                        <li>{{ idea }}</li>
+                      }
+                   </ul>
+                </div>
+              }
+              <div class="mt-8 text-right">
+                <button (click)="stateService.nextModule()" [disabled]="!validationResponse()?.is_measurable" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400">
+                  Siguiente Misión
+                </button>
+              </div>
           </div>
+        }
+        @case (2) {
+          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+            <header class="bg-cyan-600 text-white p-4 rounded-t-lg -m-8 mb-8">
+               <h1 class="text-2xl font-bold">MISIÓN 2: DISEÑANDO NUESTRO PLAN DE ATAQUE</h1>
+            </header>
+            <p class="text-slate-600 mb-2 font-semibold">Pregunta de Investigación:</p>
+            <p class="text-slate-800 mb-6 p-3 bg-slate-100 rounded-lg">"{{ stateService.problemStatement() }}"</p>
+            
+            <h3 class="text-lg font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2 mb-4">Sección 2: El Plan de Acción</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 border rounded-lg bg-slate-50">
+              <div class="md:col-span-2">
+                <label class="block font-semibold text-slate-600">¿Qué ACCIÓN haremos?</label>
+                <input type="text" [value]="newTaskAction()" (input)="newTaskAction.set($any($event.target).value)" class="w-full p-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Ej: Medir el área del charco">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600">¿Qué MATERIALES usaremos?</label>
+                <select [value]="newTaskMaterials()" (change)="newTaskMaterials.set($any($event.target).value)" class="w-full p-2 border rounded-md bg-white text-slate-900">
+                  <option value="" disabled>Selecciona un material...</option>
+                  <option>Cinta métrica</option>
+                  <option>Cuaderno y lápiz</option>
+                  <option>Cámara (celular)</option>
+                  <option>Recipiente medidor</option>
+                  <option>Cronómetro</option>
+                  <option value="Otro">Otro...</option>
+                </select>
+                @if(showOtherMaterials()) {
+                  <input type="text" [value]="newTaskMaterialsOther()" (input)="newTaskMaterialsOther.set($any($event.target).value)" class="w-full p-2 mt-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Escribe el material">
+                }
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600">¿Qué ROL es responsable?</label>
+                 <select [value]="newTaskRole()" (change)="newTaskRole.set($any($event.target).value)" class="w-full p-2 border rounded-md bg-white text-slate-900">
+                  <option value="" disabled>Selecciona un rol...</option>
+                  <option>Investigador(a)</option>
+                  <option>Diseñador(a)</option>
+                  <option>Escribano(a)</option>
+                  <option>Comunicador(a)</option>
+                  <option value="Otro">Otro...</option>
+                </select>
+                @if(showOtherRole()) {
+                  <input type="text" [value]="newTaskRoleOther()" (input)="newTaskRoleOther.set($any($event.target).value)" class="w-full p-2 mt-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Escribe el rol">
+                }
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600">Tiempo estimado</label>
+                <input type="text" [value]="newTaskTime()" (input)="newTaskTime.set($any($event.target).value)" class="w-full p-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Ej: 15 min">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600">¿Cómo sabremos que lo logramos?</label>
+                <input type="text" [value]="newTaskIndicator()" (input)="newTaskIndicator.set($any($event.target).value)" class="w-full p-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Ej: Tener las medidas anotadas">
+              </div>
+              <button (click)="handleAddTask()" [disabled]="!newTaskAction().trim()" class="md:col-span-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400">
+                Agregar Tarea al Plan
+              </button>
+            </div>
+            
+            <div class="space-y-3">
+              @for(task of stateService.actionPlanTasks(); track task.id) {
+                <details class="bg-slate-100 p-3 rounded-lg">
+                  <summary class="font-semibold cursor-pointer flex justify-between items-center">
+                    <span>{{ task.action }}</span>
+                    <button (click)="handleRemoveTask(task.id); $event.stopPropagation()" class="text-red-500 hover:text-red-700 font-bold p-1">&times;</button>
+                  </summary>
+                  <div class="mt-2 pt-2 border-t grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <p><strong class="text-slate-500">Materiales:</strong> {{ task.materials }}</p>
+                    <p><strong class="text-slate-500">Responsable:</strong> {{ task.role }}</p>
+                    <p><strong class="text-slate-500">Tiempo:</strong> {{ task.time }}</p>
+                    <p><strong class="text-slate-500">Indicador:</strong> {{ task.indicator }}</p>
+                  </div>
+                </details>
+              } @empty {
+                <p class="text-slate-500 text-center p-4">Aún no hay tareas en tu plan.</p>
+              }
+            </div>
+            <div class="mt-8 flex justify-between">
+              <button (click)="stateService.goToModule(1)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
+              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Siguiente</button>
+            </div>
+          </div>
+        }
+        @case (3) {
+          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
+              <h2 class="text-xl font-bold text-cyan-800">Módulo 3: La Hipótesis</h2>
+            </header>
+            <p class="text-slate-600 mb-4">Una hipótesis es tu mejor suposición. ¿Cuál crees que será la respuesta a tu pregunta? ¡Lánzate a predecir!</p>
+            <textarea 
+              class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-slate-900 placeholder:text-slate-500" 
+              rows="4" 
+              placeholder="Ej: 'Creo que se desperdician 10 litros de agua al día por el goteo...'"
+              [value]="hypothesisInput()"
+              (input)="hypothesisInput.set($any($event.target).value)"
+              (blur)="stateService.setHypothesis(hypothesisInput())"
+            ></textarea>
+            <div class="mt-8 flex justify-between">
+              <button (click)="stateService.goToModule(2)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
+              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Siguiente</button>
+            </div>
+          </div>
+        }
+        @case (4) {
+          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
+              <h2 class="text-xl font-bold text-cyan-800">Módulo 4: ¡A Experimentar!</h2>
+            </header>
+            <p class="text-slate-600 mb-6">¡Manos a la obra! Sigue tu plan y recolecta los datos. Anota tus observaciones aquí.</p>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 class="font-bold text-lg mb-2">Registrar Datos</h3>
+                <div class="grid sm:grid-cols-3 gap-2 p-4 border rounded-lg bg-slate-50 mb-4">
+                  <input type="text" placeholder="Descripción (Ej: Día 1)" class="sm:col-span-2 p-2 border rounded-md text-slate-900 placeholder:text-slate-500" [value]="experimentLabelInput()" (input)="experimentLabelInput.set($any($event.target).value)">
+                  <input type="number" placeholder="Valor (Ej: 5)" class="p-2 border rounded-md text-slate-900 placeholder:text-slate-500" [value]="experimentValueInput() ?? ''" (input)="experimentValueInput.set($any($event.target).valueAsNumber)">
+                  <button (click)="handleAddDataPoint()" class="sm:col-span-3 bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Agregar Dato</button>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Datos Recolectados:</h3>
+                <ul class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                  @for(data of stateService.experimentData(); track data.id) {
+                    <li class="flex justify-between items-center bg-slate-100 p-2 rounded-lg">
+                      <span>{{ data.label }}: <span class="font-bold">{{ data.value }}</span></span>
+                      <button (click)="stateService.removeExperimentDataPoint(data.id)" class="text-red-500 hover:text-red-700 font-bold text-xl leading-none">&times;</button>
+                    </li>
+                  } @empty {
+                    <li class="text-slate-500 text-center p-4">No has registrado ningún dato.</li>
+                  }
+                </ul>
+              </div>
+              <div>
+                <h3 class="font-bold text-lg mb-2">Visualización</h3>
+                <div #chartContainer class="w-full h-[300px] bg-slate-50 rounded-lg p-2 border">
+                  @if(stateService.experimentData().length === 0) {
+                    <div class="flex items-center justify-center h-full text-slate-500">La gráfica aparecerá aquí.</div>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="mt-8 flex justify-between">
+              <button (click)="stateService.goToModule(3)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
+              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Siguiente</button>
+            </div>
+          </div>
+        }
+        @case (5) {
+           <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
+              <h2 class="text-xl font-bold text-cyan-800">Módulo 5: Análisis y Conclusión</h2>
+            </header>
+            <p class="text-slate-600 mb-6">Observa tus datos. ¿Qué patrones ves? ¿Tu hipótesis fue correcta? ¿Qué aprendiste?</p>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">Análisis de Resultados:</label>
+              <textarea class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-500" rows="5" placeholder="Describe lo que observas en los datos y la gráfica. ¿Hubo sorpresas?" [value]="analysisInput()" (input)="analysisInput.set($any($event.target).value)" (blur)="stateService.setAnalysis(analysisInput())"></textarea>
+            </div>
+            <div class="mt-6">
+              <label class="block font-semibold text-slate-700 mb-2">Conclusión de la Misión:</label>
+              <textarea class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-500" rows="5" placeholder="¿Se cumplió la hipótesis? ¿Cuál es la solución que proponen?" [value]="conclusionInput()" (input)="conclusionInput.set($any($event.target).value)" (blur)="stateService.setConclusion(conclusionInput())"></textarea>
+            </div>
+            <div class="mt-8 flex justify-between">
+              <button (click)="stateService.goToModule(4)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
+              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Finalizar</button>
+            </div>
+          </div>
+        }
+        @case (6) {
+          <div class="bg-white rounded-2xl shadow-lg p-8 text-center fade-in">
+            <header class="bg-green-600 text-white p-4 rounded-t-lg -m-8 mb-8">
+               <h1 class="text-2xl font-bold">¡MISIÓN CUMPLIDA, GUARDIANES!</h1>
+            </header>
+            <p class="text-slate-600 mb-8">¡Excelente trabajo! Han completado su investigación científica. Ahora pueden generar un reporte o exportar sus datos.</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+              <button (click)="generateReport()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg">
+                Generar Reporte HTML
+              </button>
+              <button (click)="exportProgress()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">
+                Exportar Datos (JSON)
+              </button>
+              <button (click)="startOver()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg">
+                Comenzar de Nuevo
+              </button>
+            </div>
+          </div>
+        }
+      }
+      
+      @if(showUndo()) {
+        <div class="fixed bottom-20 right-5 sm:bottom-5 sm:right-5 bg-slate-700 text-white py-3 px-5 rounded-lg shadow-lg flex items-center gap-4 fade-in">
+          <span>Tarea eliminada.</span>
+          <button (click)="handleUndoRemoveTask()" class="font-bold underline text-cyan-300">Deshacer</button>
         </div>
       }
-      @case (5) {
-        <!-- Module 5: Analysis and Conclusion -->
-        <div class="fade-in">
-          <h2 class="text-2xl font-bold text-blue-800 mb-1">Módulo 5: Análisis y Conclusión</h2>
-          <p class="text-gray-600 mb-6">¡Es hora de pensar! ¿Qué significan sus datos? ¿Su hipótesis fue correcta? ¿Qué aprendieron?</p>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-lg font-medium text-gray-700 mb-2">Análisis de Resultados:</label>
-              <textarea [value]="analysis()" (input)="onAnalysisInput($event)" rows="5" class="w-full p-3 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder:text-gray-400" placeholder="Describe lo que observas en los datos y la gráfica. ¿Hubo sorpresas?"></textarea>
-            </div>
-            <div>
-              <label class="block text-lg font-medium text-gray-700 mb-2">Conclusión de la Misión:</label>
-              <textarea [value]="conclusion()" (input)="onConclusionInput($event)" rows="5" class="w-full p-3 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder:text-gray-400" placeholder="¿Se cumplió la hipótesis? ¿Qué harían diferente la próxima vez? ¿Cuál es la solución que proponen?"></textarea>
-            </div>
-          </div>
-          <div class="flex justify-between mt-6">
-            <button (click)="goToModule(4)" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 transition-colors">Atrás</button>
-            <button (click)="goToModule(6)" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Finalizar Misión</button>
-          </div>
-        </div>
-      }
-       @case (6) {
-        <!-- Final Screen -->
-        <div class="text-center fade-in">
-          <h2 class="text-3xl font-bold text-green-600 mb-4">¡Misión Cumplida, Guardianes!</h2>
-          <p class="text-lg text-gray-700 mb-8">Han completado todos los módulos de la misión. Su trabajo ayudará a proteger el agua de su comunidad. ¡Estamos orgullosos de ustedes!</p>
-          <button (click)="generateReport()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform duration-200 hover:scale-105 text-xl">
-            Generar Reporte Final
+
+      <footer class="text-center text-slate-500 mt-6 text-sm">
+        <p>Proyecto Guardianes del Agua | Asistente de Misión Digital</p>
+        @if(stateService.currentModule() > 0 && stateService.currentModule() < 6) {
+          <button (click)="requestSaveAndExit()" class="mt-2 text-slate-600 hover:text-cyan-700 font-semibold py-2 px-4 rounded-lg bg-slate-200 hover:bg-slate-300">
+            Terminar por ahora
           </button>
-        </div>
-      }
+        }
+      </footer>
     }
-  </main>
-  
-  <!-- Undo Notification -->
-  @if (showUndo()) {
-    <div class="fixed bottom-5 right-5 bg-gray-800 text-white py-3 px-5 rounded-lg shadow-lg flex items-center gap-4 fade-in">
-      <span>Tarea eliminada.</span>
-      <button (click)="undoRemoveTask()" class="font-bold hover:underline">Deshacer</button>
-    </div>
-  }
-</div>
+  </div>
+</main>
