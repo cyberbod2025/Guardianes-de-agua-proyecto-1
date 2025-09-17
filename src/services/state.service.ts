@@ -93,6 +93,15 @@ export class StateService {
       const loadedState = savedState 
         ? JSON.parse(savedState) 
         : { ...initialState, teamName: `Equipo ${teamNumber}`, currentModule: 1 };
+
+      // Migration for old state format where observations might be a string instead of an array
+      if (typeof loadedState.observations === 'string') {
+        loadedState.observations = loadedState.observations.trim() ? [loadedState.observations.trim()] : [];
+      } else if (!Array.isArray(loadedState.observations)) {
+        // Fallback for any other invalid type
+        loadedState.observations = [];
+      }
+
       this.state.set(loadedState);
     } catch (e) {
       console.error('Failed to load state from localStorage', e);

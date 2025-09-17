@@ -1,122 +1,154 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type } from '@google/genai';
-import { environment } from '../environments/environment';
 
 export interface ValidationResponse {
-    is_measurable: boolean;
-    feedback: string;
+  is_measurable: boolean;
+  feedback: string;
 }
 
 export interface InspirationResponse {
-    ideas: string[];
+  ideas: string[];
+}
+
+/**
+ * Retrieves the API key from the environment in a way that is robust
+ * against build-time static analysis and replacement.
+ * This function dynamically resolves `process.env.API_KEY` at runtime.
+ */
+function getApiKey(): string | undefined {
+  try {
+    // This dynamically evaluates code to access the global scope and then `process`.
+    // It's a strategy to prevent build tools from statically analyzing and potentially
+    // mis-handling the `process.env` access, which appears to be the root cause
+    // of the "Assignment to constant variable" error in this specific environment.
+    const global = new Function('return this')();
+    if (global && global.process && global.process.env) {
+      return global.process.env.API_KEY;
+    }
+    return undefined;
+  } catch (e) {
+    console.error("Error dynamically accessing API_KEY:", e);
+    return undefined;
+  }
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class GeminiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
 
   constructor() {
-    // The API key is sourced from an environment variable, as per instructions.
-    // In a real build process, this would be replaced.
-    const apiKey = (process.env as any).API_KEY; 
-    if (!apiKey) {
-        console.warn("API_KEY environment variable not set. Gemini Service will not function.");
-    }
-    this.ai = new GoogleGenAI({ apiKey: apiKey || 'mock_key_for_dev_only' });
+    // Intentionally left blank. Client is lazy-loaded to ensure environment is ready.
   }
 
-  async validateMeasurableQuestion(question: string): Promise<ValidationResponse> {
-    if (!(process.env as any).API_KEY) {
-        console.log("Mocking Gemini response because API key is not available.");
-        // Mock response for development without a key
-        if (question.match(/\d|cuánto|cuántos|cuántas|porcentaje|qué tan/i)) {
-            return { is_measurable: true, feedback: "¡Pregunta Aprobada! ¡Esa pregunta está con todo! ¡Bien pensado, Guardianes!" };
-        } else {
-            return { is_measurable: false, feedback: "¡Casi! Esa pregunta es genial, pero... ¿cómo la MEDIMOS? Intenta de nuevo usando palabras como 'Cuántos' o 'Qué tan rápido'. Por ejemplo: '¿Cuántos litros de agua se acumulan en el patio?' ¡Échenle coco!" };
-        }
+  private getAiClient(): GoogleGenAI | null {
+    if (this.ai) {
+      return this.ai;
     }
-      
-    const model = 'gemini-2.5-flash';
-    const systemInstruction = `Eres "El guardián del agua", un guía de misión ingenioso y motivador para estudiantes de secundaria mexicanos. Tu tono es enérgico, usas modismos mexicanos y eres un bromista nato. Analiza la pregunta del estudiante. Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura: {"is_measurable": boolean, "feedback": string}.
-- Si la pregunta es medible (contiene o implica números, porcentajes, mediciones, tiempo, etc.), asigna 'is_measurable' a true. El 'feedback' debe ser una felicitación entusiasta en español mexicano.
-- Si la pregunta NO es medible, asigna 'is_measurable' a false. El 'feedback' debe ser una guía socrática, sin dar la respuesta, para que reformulen la pregunta usando términos medibles. Además, ofrece 1 o 2 ejemplos concretos de cómo su idea podría convertirse en una pregunta medible. ¡No seas aburrido!`;
+
+    const apiKey = getApiKey();
+
+    if (apiKey) {
+      this.ai = new GoogleGenAI({ apiKey });
+      return this.ai;
+    }
     
-    const schema = {
-        type: Type.OBJECT,
-        properties: {
-            is_measurable: { type: Type.BOOLEAN },
-            feedback: { type: Type.STRING }
-        }
-    };
+    console.error(
+      'API_KEY environment variable not set or accessible. Gemini API calls will fail.'
+    );
+    return null;
+  }
 
-    try {
-      const response = await this.ai.models.generateContent({
-        model: model,
-        contents: question,
-        config: {
-            systemInstruction: systemInstruction,
-            responseMimeType: "application/json",
-            responseSchema: schema
-        }
-      });
-
-      const jsonString = response.text;
-      const parsedResponse = JSON.parse(jsonString) as ValidationResponse;
-      return parsedResponse;
-
-    } catch (error) {
-      console.error('Error calling Gemini API:', error);
+  async validateMeasurableQuestion(
+    question: string
+  ): Promise<ValidationResponse> {
+    const aiClient = this.getAiClient();
+    if (!aiClient) {
       return {
         is_measurable: false,
-        feedback: '¡Uy, parece que mis circuitos se mojaron! Hubo un error. Intenta de nuevo o revisa tu pregunta.',
+        feedback:
+          'La clave de API para el servicio de IA no está configurada.',
+      };
+    }
+    try {
+      // Use ai.models.generateContent as per guidelines
+      const response = await aiClient.models.generateContent({
+        model: 'gemini-2.5-flash', // Correct model
+        contents: `Analiza la siguiente pregunta de investigación de un estudiante de secundaria para un proyecto de ciencias sobre el agua. Determina si es "medible", lo que significa que se puede responder recolectando datos numéricos. Proporciona una respuesta en formato JSON.
+
+        Pregunta: "${question}"
+
+        Tu respuesta debe ser un objeto JSON con dos claves:
+        1. "is_measurable": un booleano (true si es medible, false si no lo es).
+        2. "feedback": una cadena de texto corta y constructiva (en español) que explique por qué la pregunta es o no medible, y si no lo es, cómo podría mejorarla. El tono debe ser amigable y alentador para un estudiante.`,
+        config: {
+          responseMimeType: 'application/json', // Using JSON response
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              is_measurable: { type: Type.BOOLEAN },
+              feedback: { type: Type.STRING },
+            },
+            required: ['is_measurable', 'feedback'],
+          },
+        },
+      });
+
+      // Correctly extract text and parse JSON
+      const jsonString = response.text.trim();
+      const result = JSON.parse(jsonString);
+      return result as ValidationResponse;
+    } catch (error) {
+      console.error('Error validating question with Gemini:', error);
+      // Return a user-friendly error response that matches the expected interface.
+      return {
+        is_measurable: false,
+        feedback:
+          '¡Uy! Hubo un problema al conectar con la IA. Inténtalo de nuevo.',
       };
     }
   }
 
   async getInspiration(topic: string): Promise<InspirationResponse> {
-    if (!(process.env as any).API_KEY) {
-        console.log("Mocking Gemini inspiration response because API key is not available.");
-        return {
-            ideas: [
-                "Idea de ejemplo 1: ¿Cuántos litros de agua se desperdician en los bebederos de la escuela en un día?",
-                "Idea de ejemplo 2: ¿Qué porcentaje de basura en los patios podría bloquear las coladeras?",
-                "Idea de ejemplo 3: ¿Cuánto tiempo tarda en secarse el charco más grande del patio después de llover?"
-            ]
-        };
+    const aiClient = this.getAiClient();
+    if (!aiClient) {
+      return {
+        ideas: ['La clave de API para el servicio de IA no está configurada.'],
+      };
     }
-
-    const model = 'gemini-2.5-flash';
-    const systemInstruction = `Eres "El guardián del agua", un cerebro de IA súper creativo para estudiantes. Tu misión es dar 3 ideas inspiradoras y concretas sobre el tema que te den. Las ideas deben ser preguntas de investigación medibles que puedan realizar estudiantes de secundaria en México. Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura: {"ideas": ["idea 1", "idea 2", "idea 3"]}.`;
-    
-    const schema = {
-        type: Type.OBJECT,
-        properties: {
-            ideas: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
-            }
-        }
-    };
-
     try {
-        const response = await this.ai.models.generateContent({
-            model: model,
-            contents: `Dame inspiración sobre este tema: ${topic}`,
-            config: {
-                systemInstruction: systemInstruction,
-                responseMimeType: "application/json",
-                responseSchema: schema
-            }
-        });
-        const jsonString = response.text;
-        return JSON.parse(jsonString) as InspirationResponse;
+      // Use ai.models.generateContent as per guidelines
+      const response = await aiClient.models.generateContent({
+        model: 'gemini-2.5-flash', // Correct model
+        contents: `Genera 3 ideas de problemas de investigación para un proyecto de ciencias de secundaria sobre el tema: "${topic}". Las ideas deben ser preguntas simples y directas que un estudiante pueda investigar. Proporciona la respuesta en formato JSON.
+
+        Tu respuesta debe ser un objeto JSON con una única clave: "ideas", que es un array de 3 strings, donde cada string es una idea de pregunta.`,
+        config: {
+          responseMimeType: 'application/json', // Using JSON response
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              ideas: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+            },
+            required: ['ideas'],
+          },
+        },
+      });
+
+      // Correctly extract text and parse JSON
+      const jsonString = response.text.trim();
+      const result = JSON.parse(jsonString);
+      return result as InspirationResponse;
     } catch (error) {
-        console.error('Error calling Gemini API for inspiration:', error);
-        return {
-            ideas: ['¡Uy, la inspiración se fue por el caño! Hubo un error al conectar con la IA. Intenta de nuevo.']
-        };
+      console.error('Error getting inspiration from Gemini:', error);
+      // Return a user-friendly error response that matches the expected interface.
+      return {
+        ideas: ['Hubo un error al buscar inspiración. ¡Inténtalo de nuevo!'],
+      };
     }
   }
 }

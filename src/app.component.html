@@ -1,415 +1,453 @@
-<main class="min-h-screen p-4 sm:p-8 font-sans">
-  <div class="max-w-4xl mx-auto">
-    
-    @if(showSummary()) {
-      <div class="bg-white rounded-2xl shadow-lg p-8 text-center fade-in">
-        <header class="bg-slate-600 text-white p-4 rounded-t-lg -m-8 mb-8">
-           <h1 class="text-2xl font-bold">RESUMEN DE MISIÓN</h1>
-        </header>
-        <p class="text-slate-600 mb-6">Este es el progreso de tu equipo hasta ahora. ¡Tomen nota de lo que falta para la próxima vez!</p>
-
-        <div class="grid md:grid-cols-2 gap-8 text-left">
-          <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 class="font-bold text-lg text-green-800 mb-3">Logros Completados</h3>
-            @if(missionSummary().completed.length > 0) {
-              <ul class="space-y-2">
-                @for(item of missionSummary().completed; track item) {
-                  <li class="text-green-900">{{ item }}</li>
+<!-- Main Application Layout -->
+<main class="container mx-auto p-4 md:p-8 max-w-6xl">
+  @switch (stateService.currentModule()) {
+    @case (0) {
+      <!-- Login/Team Selection -->
+      <div class="flex items-center justify-center min-h-screen -mt-16">
+        <div class="w-full max-w-md">
+          <div class="bg-white rounded-xl shadow-2xl p-8 space-y-6">
+            <div class="text-center">
+              <h1 class="text-4xl font-bold text-cyan-600">Guardianes del Agua</h1>
+              <p class="text-slate-500 mt-2">¡Prepárense para la Misión!</p>
+            </div>
+            
+            <div class="space-y-2">
+              <label for="group-select" class="block text-sm font-medium text-slate-600">1. Selecciona tu grupo:</label>
+              <select id="group-select" (change)="onGroupSelect($event)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5">
+                <option value="">-- Elige un grupo --</option>
+                @for (group of allGroups(); track group) {
+                  <option [value]="group">{{ group }}</option>
                 }
-              </ul>
-            } @else {
-              <p class="text-slate-500">¡Es hora de empezar a completar tareas!</p>
+              </select>
+            </div>
+            
+            @if (selectedGroup()) {
+              <div class="space-y-2 fade-in">
+                <label for="student-select" class="block text-sm font-medium text-slate-600">2. Selecciona tu nombre:</label>
+                <select id="student-select" (change)="onStudentSelect($event)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5">
+                  <option value="">-- Elige tu nombre --</option>
+                  @for (student of studentsInGroup(); track student.name) {
+                    <option [value]="student.name">{{ student.name }}</option>
+                  }
+                </select>
+              </div>
             }
-          </div>
-          <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
-            <h3 class="font-bold text-lg text-amber-800 mb-3">Tareas Pendientes</h3>
-            @if(missionSummary().pending.length > 0) {
-              <ul class="space-y-2">
-                @for(item of missionSummary().pending; track item) {
-                  <li class="text-amber-900">{{ item }}</li>
-                }
-              </ul>
-            } @else {
-              <p class="text-slate-500">¡Felicidades! Han completado todas las secciones.</p>
-            }
-          </div>
-        </div>
 
-        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-          <button (click)="cancelSaveAndExit()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105">
-            Volver a la Misión
-          </button>
-          <button (click)="confirmSaveAndExit()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg">
-            Confirmar Salida
-          </button>
+             @if (selectedStudentName()) {
+              <div class="text-center pt-4 fade-in">
+                 <button (click)="stateService.goToModule(0.5)" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-lg">
+                  ¡Comenzar Misión!
+                </button>
+              </div>
+             }
+          </div>
+           <div class="mt-6 text-center">
+              <p class="text-sm text-slate-500 mb-2">¿Ya tienes un archivo de progreso?</p>
+              <button (click)="triggerImport()" class="text-cyan-600 hover:underline font-semibold">Cargar Progreso</button>
+              <input type="file" #fileInput hidden (change)="importProgress($event)" accept=".json">
+            </div>
         </div>
       </div>
-    } @else {
-      @if(stateService.currentModule() > 0 && stateService.currentModule() < 6) {
-        <nav class="mb-8" aria-label="Barra de Misión">
-          <h2 class="sr-only">Progreso de la Misión</h2>
-          <ol class="flex items-center justify-between border border-slate-200 rounded-lg p-2 shadow-sm bg-white">
-            @for(step of ['Problema', 'Plan', 'Hipótesis', 'Experimento', 'Análisis']; track step; let i = $index) {
-              <li class="flex-1">
-                <div 
-                  class="flex flex-col items-center text-center p-2 rounded-md transition-colors"
-                  [class]="stateService.currentModule() > i + 1 ? 'text-cyan-600 font-semibold' : (stateService.currentModule() === i + 1 ? 'bg-cyan-100 text-cyan-800 font-bold' : 'text-slate-500')">
-                  <span 
-                    class="w-8 h-8 rounded-full flex items-center justify-center border-2 mb-1"
-                    [class]="stateService.currentModule() > i ? 'bg-cyan-600 border-cyan-600 text-white' : 'bg-white border-slate-300'">
-                    {{ stateService.currentModule() > i + 1 ? '&#10003;' : i + 1 }}
-                  </span>
-                  <span class="text-xs sm:text-sm">{{ step }}</span>
-                </div>
-              </li>
-              @if(! $last) {
-                <hr class="flex-auto border-t-2" [class]="stateService.currentModule() > i + 1 ? 'border-cyan-600' : 'border-slate-200'" />
-              }
-            }
-          </ol>
-        </nav>
-      }
-
-      @switch (stateService.currentModule()) {
-        @case (0) {
-          <div class="bg-white rounded-2xl shadow-lg p-8 text-center fade-in">
-            <header class="bg-cyan-600 text-white p-4 rounded-t-lg -m-8 mb-8">
-               <h1 class="text-2xl font-bold">GUARDIANES DEL AGUA</h1>
-            </header>
-            <p class="text-slate-600 mb-4">Usa el poder de los números para entender y proponer soluciones al problema del agua en nuestra comunidad.</p>
-            
-            <div class="max-w-md mx-auto text-left">
-              <div class="space-y-4">
-                <div>
-                  <label for="group-select" class="font-semibold text-slate-700">1. Selecciona tu Grupo:</label>
-                  <select id="group-select" class="w-full mt-2 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-white" (change)="onGroupSelect($event)" [value]="selectedGroup()">
-                    <option value="" disabled selected>-- Elige tu grupo --</option>
-                    @for(group of allGroups(); track group) {
-                      <option [value]="group">{{ group }}</option>
-                    }
-                  </select>
-                </div>
-
-                @if (selectedGroup()) {
-                <div class="fade-in">
-                  <label for="student-select" class="font-semibold text-slate-700">2. Selecciona tu nombre:</label>
-                  <select id="student-select" class="w-full mt-2 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-white" (change)="onStudentSelect($event)" [value]="selectedStudentName()">
-                    <option value="" disabled selected>-- Elige tu nombre de la lista --</option>
-                    @for(student of studentsInGroup(); track student.name) {
-                      <option [value]="student.name">{{ student.name }}</option>
-                    }
-                  </select>
-                </div>
-                }
-              </div>
-            </div>
-            
-            @if(teamMembers().length > 0) {
-              <div class="max-w-md mx-auto mt-6 text-left p-4 bg-slate-50 rounded-lg border border-slate-200 fade-in">
-                <h3 class="font-bold text-lg text-cyan-800">¡Equipo Encontrado!</h3>
-                <p class="text-slate-600">Eres del <strong class="font-semibold">{{ stateService.teamName() }}</strong>.</p>
-                <p class="mt-2 font-semibold text-slate-700">Integrantes:</p>
-                <ul class="list-disc list-inside text-slate-600 mt-1">
-                  @for(member of teamMembers(); track member.name) {
-                    <li>{{ member.name }}</li>
-                  }
-                </ul>
-              </div>
-            }
-            
-            <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <button (click)="stateService.goToModule(1)" [disabled]="!selectedStudentName()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 disabled:bg-slate-400 disabled:cursor-not-allowed">
-                ¡Comenzar Misión!
-              </button>
-              <input type="file" #fileInput hidden accept=".json" (change)="importProgress($event)" />
-              <button (click)="triggerImport()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-lg">
-                Importar Progreso
-              </button>
-            </div>
-          </div>
-        }
-        @case (1) {
-          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
-            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
-              <h2 class="text-xl font-bold text-cyan-800">Sección 2: Indagación Inicial (Lluvia de Ideas)</h2>
-            </header>
-            <p class="text-slate-600 mb-4">Anoten todos los problemas o hechos relacionados con el agua que conocen. Añadan uno por uno.</p>
-            <div class="space-y-2 mb-4">
-              @for(obs of stateService.observations(); track obs; let i = $index) {
-                <div class="flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    class="w-full p-2 border border-slate-300 rounded-lg text-slate-900" 
-                    [value]="obs"
-                    (blur)="handleUpdateObservation(i, $event)"
-                  />
-                  <button (click)="stateService.removeObservation(i)" class="text-red-500 hover:text-red-700 font-bold p-1 text-2xl">&times;</button>
-                </div>
-              }
-            </div>
-            <div class="flex items-center gap-2">
-              <input 
-                type="text"
-                class="w-full p-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder:text-slate-500" 
-                placeholder="Ej: 'Mucha basura en las coladeras'..."
-                [value]="newObservationInput()"
-                (input)="newObservationInput.set($any($event.target).value)"
-                (keydown.enter)="handleAddObservation()"
-              />
-              <button (click)="handleAddObservation()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg whitespace-nowrap">Añadir</button>
-            </div>
-
-
-            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 mt-8 rounded-t-lg">
-              <h2 class="text-xl font-bold text-cyan-800">Sección 3: El Puente a las Matemáticas</h2>
-            </header>
-            <p class="text-slate-600 mb-4">Ahora, transformen una de sus observaciones en una pregunta que se pueda MEDIR o CONTAR.</p>
-            <textarea 
-              class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-slate-900 placeholder:text-slate-500" 
-              rows="3" 
-              placeholder="Escribe tu pregunta medible aquí..."
-              [value]="problemStatementInput()"
-              (input)="problemStatementInput.set($any($event.target).value)"
-            ></textarea>
-            <div class="mt-4 flex flex-col sm:flex-row items-center gap-4">
-                <button (click)="validateQuestion()" [disabled]="!problemStatementInput() || isValidating()" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 flex items-center justify-center">
-                    @if(isValidating()) {
-                      <span class="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full"></span>
-                      <span>Validando...</span>
-                    } @else {
-                      <span>Validar Pregunta con IA</span>
-                    }
-                </button>
-                 <button (click)="getInspirationForProblem()" [disabled]="isGettingInspiration()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 flex items-center justify-center">
-                    @if(isGettingInspiration()) {
-                      <span class="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full"></span>
-                      <span>Buscando...</span>
-                    } @else {
-                      <span>💡 Inspiración</span>
-                    }
-                </button>
-              </div>
-              @if(validationResponse(); as vr) {
-                <div class="mt-4 p-4 rounded-lg border" [class]="vr.is_measurable ? 'bg-green-100 border-green-300 text-green-900' : 'bg-red-100 border-red-300 text-red-900'">
-                  <p class="font-bold">Respuesta del Guardián IA:</p>
-                  <p class="font-semibold">{{ vr.feedback }}</p>
-                </div>
-              }
-              @if(inspirationResponse(); as ir) {
-                <div class="mt-4 p-4 rounded-lg bg-sky-50 border border-sky-200 text-sky-800">
-                   <p class="font-bold mb-2">Aquí tienes unas ideas para inspirarte:</p>
-                   <ul class="list-disc list-inside space-y-1">
-                      @for(idea of ir.ideas; track idea) {
-                        <li>{{ idea }}</li>
-                      }
-                   </ul>
-                </div>
-              }
-              <div class="mt-8 text-right">
-                <button (click)="stateService.nextModule()" [disabled]="!validationResponse()?.is_measurable" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400">
-                  Siguiente Misión
-                </button>
-              </div>
-          </div>
-        }
-        @case (2) {
-          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
-            <header class="bg-cyan-600 text-white p-4 rounded-t-lg -m-8 mb-8">
-               <h1 class="text-2xl font-bold">MISIÓN 2: DISEÑANDO NUESTRO PLAN DE ATAQUE</h1>
-            </header>
-            <p class="text-slate-600 mb-2 font-semibold">Pregunta de Investigación:</p>
-            <p class="text-slate-800 mb-6 p-3 bg-slate-100 rounded-lg">"{{ stateService.problemStatement() }}"</p>
-            
-            <h3 class="text-lg font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2 mb-4">Sección 2: El Plan de Acción</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 border rounded-lg bg-slate-50">
-              <div class="md:col-span-2">
-                <label class="block font-semibold text-slate-600">¿Qué ACCIÓN haremos?</label>
-                <input type="text" [value]="newTaskAction()" (input)="newTaskAction.set($any($event.target).value)" class="w-full p-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Ej: Medir el área del charco">
-              </div>
-              <div>
-                <label class="block font-semibold text-slate-600">¿Qué MATERIALES usaremos?</label>
-                <select [value]="newTaskMaterials()" (change)="newTaskMaterials.set($any($event.target).value)" class="w-full p-2 border rounded-md bg-white text-slate-900">
-                  <option value="" disabled>Selecciona un material...</option>
-                  <option>Cinta métrica</option>
-                  <option>Cuaderno y lápiz</option>
-                  <option>Cámara (celular)</option>
-                  <option>Recipiente medidor</option>
-                  <option>Cronómetro</option>
-                  <option value="Otro">Otro...</option>
-                </select>
-                @if(showOtherMaterials()) {
-                  <input type="text" [value]="newTaskMaterialsOther()" (input)="newTaskMaterialsOther.set($any($event.target).value)" class="w-full p-2 mt-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Escribe el material">
-                }
-              </div>
-              <div>
-                <label class="block font-semibold text-slate-600">¿Qué ROL es responsable?</label>
-                 <select [value]="newTaskRole()" (change)="newTaskRole.set($any($event.target).value)" class="w-full p-2 border rounded-md bg-white text-slate-900">
-                  <option value="" disabled>Selecciona un rol...</option>
-                  <option>Investigador(a)</option>
-                  <option>Diseñador(a)</option>
-                  <option>Escribano(a)</option>
-                  <option>Comunicador(a)</option>
-                  <option value="Otro">Otro...</option>
-                </select>
-                @if(showOtherRole()) {
-                  <input type="text" [value]="newTaskRoleOther()" (input)="newTaskRoleOther.set($any($event.target).value)" class="w-full p-2 mt-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Escribe el rol">
-                }
-              </div>
-              <div>
-                <label class="block font-semibold text-slate-600">Tiempo estimado</label>
-                <input type="text" [value]="newTaskTime()" (input)="newTaskTime.set($any($event.target).value)" class="w-full p-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Ej: 15 min">
-              </div>
-              <div>
-                <label class="block font-semibold text-slate-600">¿Cómo sabremos que lo logramos?</label>
-                <input type="text" [value]="newTaskIndicator()" (input)="newTaskIndicator.set($any($event.target).value)" class="w-full p-2 border rounded-md text-slate-900 placeholder:text-slate-500" placeholder="Ej: Tener las medidas anotadas">
-              </div>
-              <button (click)="handleAddTask()" [disabled]="!newTaskAction().trim()" class="md:col-span-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400">
-                Agregar Tarea al Plan
-              </button>
-            </div>
-            
-            <div class="space-y-3">
-              @for(task of stateService.actionPlanTasks(); track task.id) {
-                <details class="bg-slate-100 p-3 rounded-lg">
-                  <summary class="font-semibold cursor-pointer flex justify-between items-center">
-                    <span>{{ task.action }}</span>
-                    <button (click)="handleRemoveTask(task.id); $event.stopPropagation()" class="text-red-500 hover:text-red-700 font-bold p-1">&times;</button>
-                  </summary>
-                  <div class="mt-2 pt-2 border-t grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    <p><strong class="text-slate-500">Materiales:</strong> {{ task.materials }}</p>
-                    <p><strong class="text-slate-500">Responsable:</strong> {{ task.role }}</p>
-                    <p><strong class="text-slate-500">Tiempo:</strong> {{ task.time }}</p>
-                    <p><strong class="text-slate-500">Indicador:</strong> {{ task.indicator }}</p>
-                  </div>
-                </details>
-              } @empty {
-                <p class="text-slate-500 text-center p-4">Aún no hay tareas en tu plan.</p>
-              }
-            </div>
-            <div class="mt-8 flex justify-between">
-              <button (click)="stateService.goToModule(1)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
-              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Siguiente</button>
-            </div>
-          </div>
-        }
-        @case (3) {
-          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
-            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
-              <h2 class="text-xl font-bold text-cyan-800">Módulo 3: La Hipótesis</h2>
-            </header>
-            <p class="text-slate-600 mb-4">Una hipótesis es tu mejor suposición. ¿Cuál crees que será la respuesta a tu pregunta? ¡Lánzate a predecir!</p>
-            <textarea 
-              class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-slate-900 placeholder:text-slate-500" 
-              rows="4" 
-              placeholder="Ej: 'Creo que se desperdician 10 litros de agua al día por el goteo...'"
-              [value]="hypothesisInput()"
-              (input)="hypothesisInput.set($any($event.target).value)"
-              (blur)="stateService.setHypothesis(hypothesisInput())"
-            ></textarea>
-            <div class="mt-8 flex justify-between">
-              <button (click)="stateService.goToModule(2)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
-              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Siguiente</button>
-            </div>
-          </div>
-        }
-        @case (4) {
-          <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
-            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
-              <h2 class="text-xl font-bold text-cyan-800">Módulo 4: ¡A Experimentar!</h2>
-            </header>
-            <p class="text-slate-600 mb-6">¡Manos a la obra! Sigue tu plan y recolecta los datos. Anota tus observaciones aquí.</p>
-
-            <div class="grid md:grid-cols-2 gap-8">
-              <div>
-                <h3 class="font-bold text-lg mb-2">Registrar Datos</h3>
-                <div class="grid sm:grid-cols-3 gap-2 p-4 border rounded-lg bg-slate-50 mb-4">
-                  <input type="text" placeholder="Descripción (Ej: Día 1)" class="sm:col-span-2 p-2 border rounded-md text-slate-900 placeholder:text-slate-500" [value]="experimentLabelInput()" (input)="experimentLabelInput.set($any($event.target).value)">
-                  <input type="number" placeholder="Valor (Ej: 5)" class="p-2 border rounded-md text-slate-900 placeholder:text-slate-500" [value]="experimentValueInput() ?? ''" (input)="experimentValueInput.set($any($event.target).valueAsNumber)">
-                  <button (click)="handleAddDataPoint()" class="sm:col-span-3 bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Agregar Dato</button>
-                </div>
-                <h3 class="font-bold text-lg mb-2">Datos Recolectados:</h3>
-                <ul class="space-y-2 max-h-48 overflow-y-auto pr-2">
-                  @for(data of stateService.experimentData(); track data.id) {
-                    <li class="flex justify-between items-center bg-slate-100 p-2 rounded-lg">
-                      <span>{{ data.label }}: <span class="font-bold">{{ data.value }}</span></span>
-                      <button (click)="stateService.removeExperimentDataPoint(data.id)" class="text-red-500 hover:text-red-700 font-bold text-xl leading-none">&times;</button>
-                    </li>
-                  } @empty {
-                    <li class="text-slate-500 text-center p-4">No has registrado ningún dato.</li>
-                  }
-                </ul>
-              </div>
-              <div>
-                <h3 class="font-bold text-lg mb-2">Visualización</h3>
-                <div #chartContainer class="w-full h-[300px] bg-slate-50 rounded-lg p-2 border">
-                  @if(stateService.experimentData().length === 0) {
-                    <div class="flex items-center justify-center h-full text-slate-500">La gráfica aparecerá aquí.</div>
-                  }
-                </div>
-              </div>
-            </div>
-            <div class="mt-8 flex justify-between">
-              <button (click)="stateService.goToModule(3)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
-              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Siguiente</button>
-            </div>
-          </div>
-        }
-        @case (5) {
-           <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
-            <header class="bg-cyan-100 border-b-2 border-cyan-300 p-4 -m-8 mb-8 rounded-t-lg">
-              <h2 class="text-xl font-bold text-cyan-800">Módulo 5: Análisis y Conclusión</h2>
-            </header>
-            <p class="text-slate-600 mb-6">Observa tus datos. ¿Qué patrones ves? ¿Tu hipótesis fue correcta? ¿Qué aprendiste?</p>
-            <div>
-              <label class="block font-semibold text-slate-700 mb-2">Análisis de Resultados:</label>
-              <textarea class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-500" rows="5" placeholder="Describe lo que observas en los datos y la gráfica. ¿Hubo sorpresas?" [value]="analysisInput()" (input)="analysisInput.set($any($event.target).value)" (blur)="stateService.setAnalysis(analysisInput())"></textarea>
-            </div>
-            <div class="mt-6">
-              <label class="block font-semibold text-slate-700 mb-2">Conclusión de la Misión:</label>
-              <textarea class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-500" rows="5" placeholder="¿Se cumplió la hipótesis? ¿Cuál es la solución que proponen?" [value]="conclusionInput()" (input)="conclusionInput.set($any($event.target).value)" (blur)="stateService.setConclusion(conclusionInput())"></textarea>
-            </div>
-            <div class="mt-8 flex justify-between">
-              <button (click)="stateService.goToModule(4)" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Atrás</button>
-              <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Finalizar</button>
-            </div>
-          </div>
-        }
-        @case (6) {
-          <div class="bg-white rounded-2xl shadow-lg p-8 text-center fade-in">
-            <header class="bg-green-600 text-white p-4 rounded-t-lg -m-8 mb-8">
-               <h1 class="text-2xl font-bold">¡MISIÓN CUMPLIDA, GUARDIANES!</h1>
-            </header>
-            <p class="text-slate-600 mb-8">¡Excelente trabajo! Han completado su investigación científica. Ahora pueden generar un reporte o exportar sus datos.</p>
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
-              <button (click)="generateReport()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg">
-                Generar Reporte HTML
-              </button>
-              <button (click)="exportProgress()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">
-                Exportar Datos (JSON)
-              </button>
-              <button (click)="startOver()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg">
-                Comenzar de Nuevo
-              </button>
-            </div>
-          </div>
-        }
-      }
-      
-      @if(showUndo()) {
-        <div class="fixed bottom-20 right-5 sm:bottom-5 sm:right-5 bg-slate-700 text-white py-3 px-5 rounded-lg shadow-lg flex items-center gap-4 fade-in">
-          <span>Tarea eliminada.</span>
-          <button (click)="handleUndoRemoveTask()" class="font-bold underline text-cyan-300">Deshacer</button>
-        </div>
-      }
-
-      <footer class="text-center text-slate-500 mt-6 text-sm">
-        <p>Proyecto Guardianes del Agua | Asistente de Misión Digital</p>
-        @if(stateService.currentModule() > 0 && stateService.currentModule() < 6) {
-          <button (click)="requestSaveAndExit()" class="mt-2 text-slate-600 hover:text-cyan-700 font-semibold py-2 px-4 rounded-lg bg-slate-200 hover:bg-slate-300">
-            Terminar por ahora
-          </button>
-        }
-      </footer>
     }
-  </div>
+    @case (0.5) {
+      <!-- Mission Guide -->
+      <div class="bg-white rounded-xl shadow-lg p-8 fade-in max-w-4xl mx-auto">
+          <h1 class="text-3xl font-bold text-cyan-700 text-center mb-4">Guía de Misión: Guardianes del Agua</h1>
+          <p class="text-slate-600 text-center mb-6">¡Hola, equipo! Su misión es convertirse en científicos y resolver un problema real en nuestra comunidad.</p>
+          
+          <div class="space-y-4 text-slate-700">
+              <p><strong>El Reto:</strong> Las lluvias intensas a veces causan problemas, como inundaciones o desperdicio de agua. ¡Vamos a investigar esto!</p>
+              <p><strong>El Objetivo:</strong> Usaremos el método científico para entender el problema y proponer una solución real y medible.</p>
+              
+              <h2 class="text-2xl font-semibold text-cyan-600 pt-4 border-t border-slate-200">El Camino del Científico:</h2>
+              <ol class="list-decimal list-inside space-y-2">
+                  <li><strong>Observar:</strong> ¿Qué problemas relacionados con el agua de lluvia ven en la escuela?</li>
+                  <li><strong>Preguntar:</strong> Formular una pregunta CLARA y MEDIBLE sobre el problema.</li>
+                  <li><strong>Planear:</strong> Crear un plan de acción para investigar su pregunta.</li>
+                  <li><strong>Hipotetizar:</strong> ¿Cuál creen que será el resultado? ¡Hagan una predicción!</li>
+                  <li><strong>Experimentar:</strong> ¡Manos a la obra! Sigan su plan y recolecten datos.</li>
+                  <li><strong>Analizar:</strong> ¿Qué dicen sus datos? ¿Qué patrones encuentran?</li>
+                  <li><strong>Concluir:</strong> ¿Su hipótesis fue correcta? ¿Qué aprendieron? ¿Qué solución proponen?</li>
+              </ol>
+          </div>
+
+          <div class="text-center mt-8">
+              <button (click)="stateService.nextModule()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-lg">
+                  ¡Entendido! Iniciar Misión 1
+              </button>
+          </div>
+      </div>
+    }
+    @case (1) {
+      <!-- Module 1: El Problema -->
+      <div class="fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <button (click)="stateService.goToModule(0.5)" class="text-slate-500 hover:text-slate-800">&larr; Volver a la Guía</button>
+            <h2 class="text-3xl font-bold text-cyan-700 text-center">Misión 1: El Problema</h2>
+            <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Siguiente &rarr;</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: Observations -->
+            <div>
+              <h3 class="text-xl font-semibold text-slate-700 mb-2">1. Lluvia de ideas: ¿Qué problemas ven?</h3>
+              <p class="text-sm text-slate-500 mb-4">Añadan todo lo que observen sobre el agua de lluvia en la escuela.</p>
+              <div class="flex gap-2">
+                <input #newObservation (keyup.enter)="handleAddObservation()" [value]="newObservationInput()" (input)="newObservationInput.set(newObservation.value)" class="flex-grow bg-white border-2 border-slate-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-slate-900" placeholder="Ej: El patio se inunda cerca de la cancha">
+                <button (click)="handleAddObservation()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Añadir</button>
+              </div>
+              <ul class="mt-4 space-y-2">
+                @for (obs of stateService.observations(); track $index; let i = $index) {
+                  <li class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                    <span class="font-mono text-cyan-600">{{ i + 1 }}.</span>
+                    <input [value]="obs" (change)="handleUpdateObservation(i, $event)" class="w-full bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-cyan-500 rounded px-1">
+                    <button (click)="stateService.removeObservation(i)" class="text-slate-400 hover:text-red-500 transition-colors" aria-label="Eliminar observación">
+                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <!-- Right Column: Research Question -->
+            <div>
+              <h3 class="text-xl font-semibold text-slate-700 mb-2">2. Pregunta de Investigación</h3>
+              <p class="text-sm text-slate-500 mb-4">Conviertan sus observaciones en una pregunta que puedan MEDIR.</p>
+              <textarea
+                class="w-full bg-white border-2 border-slate-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-slate-900 shadow-sm text-lg"
+                rows="4"
+                placeholder="Ej: ¿Cuántos litros de agua se estancan en el patio después de una lluvia de 10 minutos?"
+                [value]="problemStatementInput()"
+                (input)="problemStatementInput.set(($event.target as HTMLTextAreaElement).value); validationResponse.set(null)"
+              ></textarea>
+              <div class="flex items-center gap-4 mt-2">
+                <button (click)="validateQuestion()" [disabled]="isValidating()" class="bg-green-500 hover:bg-green-600 disabled:bg-slate-400 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    @if (isValidating()) { <span>Validando...</span> } @else { <span>Validar Pregunta</span> }
+                </button>
+                <button (click)="getInspirationForProblem()" [disabled]="isGettingInspiration()" class="text-cyan-600 hover:underline disabled:text-slate-400">
+                    @if (isGettingInspiration()) { <span>Buscando...</span> } @else { <span>Necesito inspiración</span> }
+                </button>
+              </div>
+              
+              @if (validationResponse(); as resp) {
+                <div class="mt-4 p-4 rounded-lg text-sm {{ resp.is_measurable ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">
+                    <p><strong class="font-bold">{{ resp.is_measurable ? '¡Excelente Pregunta!' : '¡Ajustemos la Pregunta!' }}</strong> {{ resp.feedback }}</p>
+                </div>
+              }
+               @if (inspirationResponse(); as resp) {
+                <div class="mt-4 p-4 rounded-lg bg-sky-100 text-sky-800 text-sm">
+                    <p class="font-bold mb-2">Aquí tienes unas ideas:</p>
+                    <ul class="list-disc list-inside">
+                        @for(idea of resp.ideas; track idea){
+                            <li>{{idea}}</li>
+                        }
+                    </ul>
+                </div>
+               }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    @case (2) {
+      <!-- Misión 2: Plan de Ataque -->
+      <div class="fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <button (click)="stateService.goToModule(1)" class="text-slate-500 hover:text-slate-800">&larr; Volver</button>
+            <h2 class="text-3xl font-bold text-cyan-700 text-center">Misión 2: Plan de Ataque</h2>
+            <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Siguiente &rarr;</button>
+        </div>
+
+        <!-- Add new task form -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h3 class="text-2xl font-bold text-slate-700 mb-4">Nueva Tarea</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Action -->
+                <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Acción (¿Qué se va a hacer?)</label>
+                    <input class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" [value]="newTaskAction()" (input)="newTaskAction.set(($event.target as HTMLInputElement).value)">
+                </div>
+                <!-- Materials -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Materiales</label>
+                    <select class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" [value]="newTaskMaterials()" (change)="newTaskMaterials.set(($event.target as HTMLSelectElement).value)">
+                        <option value="">Seleccionar...</option>
+                        <option>Cronómetro</option>
+                        <option>Cinta métrica</option>
+                        <option>Recipiente medidor (litros)</option>
+                        <option>Cámara (celular)</option>
+                        <option>Cuaderno de notas</option>
+                        <option value="Otro">Otro...</option>
+                    </select>
+                    @if(showOtherMaterials()) {
+                        <input class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 mt-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Especificar material" [value]="newTaskMaterialsOther()" (input)="newTaskMaterialsOther.set(($event.target as HTMLInputElement).value)">
+                    }
+                </div>
+                <!-- Role -->
+                 <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Responsable</label>
+                    <select class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" [value]="newTaskRole()" (change)="newTaskRole.set(($event.target as HTMLSelectElement).value)">
+                         <option value="">Seleccionar...</option>
+                        @for (member of teamMembers(); track member.name) {
+                            <option [value]="member.name.split(',')[0]">{{ member.name.split(',')[0] }}</option>
+                        }
+                        <option value="Todo el equipo">Todo el equipo</option>
+                        <option value="Otro">Otro...</option>
+                    </select>
+                    @if (showOtherRole()) {
+                         <input class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 mt-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Especificar responsable" [value]="newTaskRoleOther()" (input)="newTaskRoleOther.set(($event.target as HTMLInputElement).value)">
+                    }
+                </div>
+                <!-- Time -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Tiempo</label>
+                    <input type="text" placeholder="Ej: 15 minutos" class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" [value]="newTaskTime()" (input)="newTaskTime.set(($event.target as HTMLInputElement).value)">
+                </div>
+                <!-- Indicator -->
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Indicador de Éxito (¿Cómo sabremos que se completó?)</label>
+                    <input type="text" placeholder="Ej: Foto de la medición" class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" [value]="newTaskIndicator()" (input)="newTaskIndicator.set(($event.target as HTMLInputElement).value)">
+                </div>
+
+                <div class="col-span-1 flex items-end">
+                    <button (click)="handleAddTask()" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Añadir Tarea al Plan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task list -->
+        <div class="mt-8">
+            <h3 class="text-2xl font-bold text-slate-700 mb-4">Lista de Tareas</h3>
+            @if (stateService.actionPlanTasks().length === 0) {
+                <p class="text-slate-500 italic text-center py-8">Aún no hay tareas en el plan. ¡Añade la primera!</p>
+            } @else {
+                <div class="space-y-4">
+                    @for (task of stateService.actionPlanTasks(); track task.id; let i = $index) {
+                        <div class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">
+                            <!-- Task Header -->
+                            <div class="p-4 flex justify-between items-center gap-4 cursor-pointer" (click)="toggleTask(task.id)">
+                                <p class="font-bold text-lg text-cyan-700 select-none">{{ i + 1 }}. {{ task.action }}</p>
+                                <div class="flex-shrink-0 flex items-center gap-2">
+                                    <button (click)="$event.stopPropagation(); handleRemoveTask(task.id)" class="text-slate-400 hover:text-red-500 p-1 rounded-full transition-colors" aria-label="Eliminar tarea">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    </button>
+                                    <div class="text-slate-500 p-1">
+                                        <svg class="w-6 h-6 transition-transform transform {{ expandedTasks().has(task.id) ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Task Details (collapsible) -->
+                            @if (expandedTasks().has(task.id)) {
+                                <div class="px-4 pb-4 border-t border-slate-200 bg-slate-50 fade-in">
+                                    <div class="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm text-slate-600">
+                                        <div>
+                                            <strong class="block font-semibold text-slate-800">Responsable:</strong>
+                                            <span>{{ task.role }}</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block font-semibold text-slate-800">Materiales:</strong>
+                                            <span>{{ task.materials }}</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block font-semibold text-slate-800">Tiempo:</strong>
+                                            <span>{{ task.time }}</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block font-semibold text-slate-800">Indicador:</strong>
+                                            <span>{{ task.indicator }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+      </div>
+    }
+    @case (3) {
+      <!-- Misión 3: Hipótesis -->
+       <div class="fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <button (click)="stateService.goToModule(2)" class="text-slate-500 hover:text-slate-800">&larr; Volver</button>
+            <h2 class="text-3xl font-bold text-cyan-700 text-center">Misión 3: La Hipótesis</h2>
+            <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Siguiente &rarr;</button>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-lg max-w-3xl mx-auto">
+             <h3 class="text-xl font-semibold text-slate-700 mb-2">¿Qué creen que pasará?</h3>
+             <p class="text-sm text-slate-500 mb-4">Escriban una predicción clara basada en su pregunta de investigación. Usen el formato "Si..., entonces... porque...".</p>
+             <textarea 
+                class="w-full bg-white border-2 border-slate-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-slate-900 shadow-sm text-lg"
+                rows="6"
+                placeholder="Ej: Si medimos el agua del charco, entonces encontraremos más de 20 litros, porque el piso está hundido en esa zona."
+                [value]="hypothesisInput()"
+                (input)="hypothesisInput.set(($event.target as HTMLTextAreaElement).value)"
+                (change)="stateService.setHypothesis(hypothesisInput())"
+             ></textarea>
+        </div>
+      </div>
+    }
+     @case (4) {
+      <!-- Misión 4: Experimento -->
+      <div class="fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <button (click)="stateService.goToModule(3)" class="text-slate-500 hover:text-slate-800">&larr; Volver</button>
+            <h2 class="text-3xl font-bold text-cyan-700 text-center">Misión 4: ¡A Experimentar!</h2>
+            <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Siguiente &rarr;</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                 <h3 class="text-xl font-semibold text-slate-700 mb-2">Registro de Datos</h3>
+                 <p class="text-sm text-slate-500 mb-4">Añadan los datos que vayan recolectando. ¡Sean precisos!</p>
+                 <div class="flex items-center gap-2 mb-4">
+                    <input class="w-full bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Etiqueta (Ej: Medición 1)" [value]="experimentLabelInput()" (input)="experimentLabelInput.set(($event.target as HTMLInputElement).value)">
+                    <input type="number" class="w-48 bg-white border-2 border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Valor (número)" [value]="experimentValueInput()" (input)="experimentValueInput.set(($event.target as HTMLInputElement).valueAsNumber)">
+                    <button (click)="handleAddDataPoint()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Añadir</button>
+                 </div>
+                 <ul class="space-y-2">
+                    @for (data of stateService.experimentData(); track data.id; let i = $index) {
+                      <li class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                        <span class="font-mono text-cyan-600">{{i + 1}}.</span>
+                        <span class="font-semibold flex-grow">{{data.label}}:</span>
+                        <span class="font-bold text-lg text-cyan-700">{{data.value}}</span>
+                         <button (click)="stateService.removeExperimentDataPoint(data.id)" class="text-slate-400 hover:text-red-500 transition-colors" aria-label="Eliminar dato">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                      </li>
+                    }
+                 </ul>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-semibold text-slate-700 mb-4">Visualización de Datos</h3>
+                @if(stateService.experimentData().length > 0) {
+                    <div #chartContainer class="w-full h-64 md:h-80"></div>
+                } @else {
+                    <div class="flex items-center justify-center h-64 md:h-80 text-slate-400 italic">
+                        <p>Los datos aparecerán aquí en una gráfica.</p>
+                    </div>
+                }
+            </div>
+        </div>
+      </div>
+    }
+     @case (5) {
+      <!-- Misión 5: Análisis -->
+      <div class="fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <button (click)="stateService.goToModule(4)" class="text-slate-500 hover:text-slate-800">&larr; Volver</button>
+            <h2 class="text-3xl font-bold text-cyan-700 text-center">Misión 5: Análisis</h2>
+            <button (click)="stateService.nextModule()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Siguiente &rarr;</button>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-lg max-w-3xl mx-auto">
+             <h3 class="text-xl font-semibold text-slate-700 mb-2">¿Qué significan los datos?</h3>
+             <p class="text-sm text-slate-500 mb-4">Describan lo que encontraron. ¿Hay patrones? ¿Qué muestra la gráfica? ¿Sus resultados apoyan su hipótesis?</p>
+             <textarea 
+                class="w-full bg-white border-2 border-slate-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-slate-900 shadow-sm text-lg"
+                rows="10"
+                placeholder="Ej: Nuestros datos muestran que el charco acumula un promedio de 25 litros, lo cual es más de lo que predijimos en la hipótesis. La gráfica muestra que las mediciones fueron consistentes..."
+                [value]="analysisInput()"
+                (input)="analysisInput.set(($event.target as HTMLTextAreaElement).value)"
+                (change)="stateService.setAnalysis(analysisInput())"
+             ></textarea>
+        </div>
+      </div>
+    }
+     @case (6) {
+      <!-- Misión 6: Conclusión y Reporte -->
+      <div class="fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <button (click)="stateService.goToModule(5)" class="text-slate-500 hover:text-slate-800">&larr; Volver</button>
+            <h2 class="text-3xl font-bold text-cyan-700 text-center">Misión 6: Conclusión</h2>
+            <div></div> <!-- Spacer -->
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-lg max-w-3xl mx-auto">
+             <h3 class="text-xl font-semibold text-slate-700 mb-2">¡Misión Cumplida!</h3>
+             <p class="text-sm text-slate-500 mb-4">Resuman todo el proyecto. ¿Qué aprendieron? ¿Cuál es su solución propuesta al problema que investigaron?</p>
+             <textarea 
+                class="w-full bg-white border-2 border-slate-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-slate-900 shadow-sm text-lg"
+                rows="10"
+                placeholder="Ej: Aprendimos a usar el método científico para investigar un problema real. Nuestra solución propuesta es redigirir el agua del techo con una canaleta para que no se forme el charco..."
+                [value]="conclusionInput()"
+                (input)="conclusionInput.set(($event.target as HTMLTextAreaElement).value)"
+                (change)="stateService.setConclusion(conclusionInput())"
+             ></textarea>
+
+             <div class="mt-8 text-center">
+                <h3 class="text-xl font-semibold text-slate-700">¡Genera tu Reporte Final!</h3>
+                <button (click)="generateReport()" class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-lg">
+                    Ver Reporte de Misión
+                </button>
+             </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Global elements: Header for ongoing missions -->
+  @if (stateService.currentModule() > 0) {
+    <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm shadow-md z-10">
+      <div class="container mx-auto px-4 py-2 flex justify-between items-center">
+        <div class="text-lg font-bold text-cyan-700">
+          Equipo: {{ stateService.teamName() }}
+        </div>
+        <div class="flex items-center gap-4">
+          <button (click)="exportProgress()" class="text-sm text-slate-600 hover:text-cyan-600 font-semibold">Guardar Progreso</button>
+          <button (click)="requestSaveAndExit()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg">Salir de la Misión</button>
+        </div>
+      </div>
+    </header>
+  }
 </main>
+
+<!-- Summary/Exit Modal -->
+@if (showSummary()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="relative bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-auto fade-in">
+      <h3 class="text-2xl font-bold text-slate-800">Resumen de la Misión</h3>
+      <p class="text-slate-500 mt-2">¿Estás seguro de que quieres salir? Tu progreso se guardará automáticamente.</p>
+      
+      <div class="mt-4 border-t border-b border-slate-200 py-4">
+        <h4 class="font-semibold text-slate-800">Completado:</h4>
+        @if (missionSummary().completed.length > 0) {
+            <ul class="list-disc list-inside text-slate-600 mt-2">
+                @for (item of missionSummary().completed; track item) {
+                <li>{{ item }}</li>
+                }
+            </ul>
+        } @else {
+            <p class="text-slate-500 italic mt-2">Ningún módulo completado aún.</p>
+        }
+       
+        @if (missionSummary().pending.length > 0) {
+          <h4 class="font-semibold text-slate-800 mt-4">Pendiente:</h4>
+          <ul class="list-disc list-inside text-slate-600 mt-2">
+            @for (item of missionSummary().pending; track item) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="flex justify-between items-center mt-6">
+        <button (click)="startOver()" class="text-sm text-red-600 hover:underline">Empezar de nuevo</button>
+        <div class="flex gap-4">
+          <button (click)="cancelSaveAndExit()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+          <button (click)="confirmSaveAndExit()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Sí, Salir y Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Toast/Snackbar for Undo -->
+@if (showUndo()) {
+  <div class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white py-3 px-6 rounded-full shadow-lg flex items-center justify-center gap-4 fade-in">
+    <span>Tarea eliminada</span>
+    <button (click)="handleUndoRemoveTask()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-1 px-3 rounded-full text-sm">
+      Deshacer
+    </button>
+  </div>
+}
